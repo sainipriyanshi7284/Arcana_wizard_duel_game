@@ -5,6 +5,9 @@ class Camera:
     def __init__(self):
         index=0
         self.cap = cv2.VideoCapture(index)
+
+    def is_open(self):
+        return self.cap.isOpened()
     
     def open_camera(self):
         if not self.cap.isOpened():
