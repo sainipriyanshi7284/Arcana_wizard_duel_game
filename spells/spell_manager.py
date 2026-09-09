@@ -11,18 +11,21 @@ class SpellManager:
 
         self.spells = {
 
-            "Closed_Fist": FireSpell(),
+            "Closed_Fist": FireSpell,
 
-            "Victory": IceSpell(),
+            "Victory": IceSpell,
 
-            "Open_Palm": ShieldSpell(),
+            "Open_Palm": ShieldSpell,
 
-            "Pointing_Up": LightningSpell(),
+            "Pointing_Up": LightningSpell,
 
-            "Thumb_Up": WindSpell(),
+            "Thumb_Up": WindSpell,
 
         }
 
     def get_spell(self, gesture):
 
-        return self.spells.get(gesture, None)
+        spell_class = self.spells.get(gesture, None)
+        if spell_class:
+            return spell_class()
+        return None
