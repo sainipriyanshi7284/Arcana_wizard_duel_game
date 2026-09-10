@@ -1,3 +1,4 @@
+
 import cv2
 import time
 
@@ -20,6 +21,9 @@ class Game:
         self.prev_time = time.time()
         self.start_time = time.time()
         self.last_timestamp = 0
+        self.game_over = False
+        self.winner = ""
+        self.game_over_time = 0.0
 
 
     def display_text(self, frame):
@@ -79,41 +83,76 @@ class Game:
                 0.8,
                 (255,0,0),
                 2
-            )
+            ) 
+            pw1_x=35
+            # --- Player 1 Stats ---
+            # HP Bar
+            cv2.putText(frame, "HP:", (pw1_x-30, 62), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 200, 0), 2)
+            cv2.rectangle(frame, (pw1_x, 50), (pw1_x+200, 65), (50, 50, 50), -1)
+            cv2.rectangle(frame, (pw1_x, 50), (pw1_x + int(self.player1.health * 2), 65), (0, 200, 0), -1)
+            cv2.rectangle(frame, (pw1_x, 50), (pw1_x+200, 65), (255, 255, 255), 1)
+            cv2.putText(frame, f"{int(self.player1.health)} / 100", (pw1_x+210, 62), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
             
-            # Display Player 1 Spell Name
-            if self.player1.spell:
-                cv2.putText(
-                    frame,
-                    f"Spell: {self.player1.spell.name}",
-                    (70,70),
-                    cv2.FONT_HERSHEY_COMPLEX,
-                    0.6,
-                    (255,0,0),
-                    2
-                )
+            # MP Bar
+            cv2.putText(frame, "MP:", (pw1_x-30, 87), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 100, 0), 2)
+            cv2.rectangle(frame, (pw1_x, 75), (pw1_x+200, 90), (50, 50, 50), -1)
+            cv2.rectangle(frame, (pw1_x, 75), (pw1_x + int(self.player1.mana * 2), 90), (255, 100, 0), -1)
+            cv2.rectangle(frame, (pw1_x, 75), (pw1_x+200, 90), (255, 255, 255), 1)
+            cv2.putText(frame, f"{int(self.player1.mana)} / 100", (pw1_x+210, 87), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+            
+            if not self.player1.is_defeated:
+                if self.player1.spell_state == "CHARGING" and self.player1.locked_spell:
+                    color = (0,255,0) if self.player1.mana >= self.player1.locked_spell.mana_cost else (0,165,255)
+                    power = int((self.player1.charge_time / 5.0) * 100)
+                    cv2.putText(frame, f"{self.player1.locked_spell.name}", (pw1_x,130), cv2.FONT_HERSHEY_COMPLEX, 0.6, color, 2)
+                    cv2.putText(frame, f"Charging: {self.player1.charge_time:.1f}s / 5.0s", (pw1_x,165), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255,255,255), 1)
+                    cv2.putText(frame, f"Power: {power}%", (pw1_x,200), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255,255,255), 1)
+                    cv2.putText(frame, f"Cost: {self.player1.locked_spell.mana_cost} MP", (pw1_x,235), cv2.FONT_HERSHEY_COMPLEX, 0.5, color, 1)
+                elif self.player1.spell_state in ["CAST", "CANCELLED"]:
+                    lines = self.player1.ui_message.split('\n')
+                    color = (0,255,0) if self.player1.spell_state == "CAST" else (0,0,255)
+                    for idx, line in enumerate(lines):
+                        cv2.putText(frame, line, (pw1_x,130 + idx*35), cv2.FONT_HERSHEY_COMPLEX, 0.6, color, 2)
                 
+            # --- Player 2 Stats ---
+            p2_x = w //2 
             cv2.putText(
                 frame,
                 "PLAYER 2",
-                (w-220,35),
+                (p2_x, 35),
                 cv2.FONT_HERSHEY_COMPLEX,
                 0.8,
                 (0,0,255),
-                2
+                2 
             )
             
-            # Display Player 2 Spell Name
-            if self.player2.spell:
-                cv2.putText(
-                    frame,
-                    f"Spell: {self.player2.spell.name}",
-                    (w-220,70),
-                    cv2.FONT_HERSHEY_COMPLEX,
-                    0.6,
-                    (0,0,255),
-                    2
-                )
+            # HP Bar
+            cv2.putText(frame, "HP:", (p2_x, 62), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 200, 0), 2)
+            cv2.rectangle(frame, (p2_x + 40, 50), (p2_x + 240, 65), (50, 50, 50), -1)
+            cv2.rectangle(frame, (p2_x + 40, 50), (p2_x + 40 + int(self.player2.health * 2), 65), (0, 200, 0), -1)
+            cv2.rectangle(frame, (p2_x + 40, 50), (p2_x + 240, 65), (255, 255, 255), 1)
+            cv2.putText(frame, f"{int(self.player2.health)} / 100", (p2_x + 250, 62), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+            
+            # MP Bar
+            cv2.putText(frame, "MP:", (p2_x, 87), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 100, 0), 2)
+            cv2.rectangle(frame, (p2_x + 40, 75), (p2_x + 240, 90), (50, 50, 50), -1)
+            cv2.rectangle(frame, (p2_x + 40, 75), (p2_x + 40 + int(self.player2.mana * 2), 90), (255, 100, 0), -1)
+            cv2.rectangle(frame, (p2_x + 40, 75), (p2_x + 240, 90), (255, 255, 255), 1)
+            cv2.putText(frame, f"{int(self.player2.mana)} / 100", (p2_x + 250, 87), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+            
+            if not self.player2.is_defeated:
+                if self.player2.spell_state == "CHARGING" and self.player2.locked_spell:
+                    color = (0,255,0) if self.player2.mana >= self.player2.locked_spell.mana_cost else (0,165,255)
+                    power = int((self.player2.charge_time / 5.0) * 100)
+                    cv2.putText(frame, f"{self.player2.locked_spell.name}", (p2_x + 40,130), cv2.FONT_HERSHEY_COMPLEX, 0.6, color, 2)
+                    cv2.putText(frame, f"Charging: {self.player2.charge_time:.1f}s / 5.0s", (p2_x + 40,165), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255,255,255), 1)
+                    cv2.putText(frame, f"Power: {power}%", (p2_x + 40,200), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255,255,255), 1)
+                    cv2.putText(frame, f"Cost: {self.player2.locked_spell.mana_cost} MP", (p2_x + 40,235), cv2.FONT_HERSHEY_COMPLEX, 0.5, color, 1)
+                elif self.player2.spell_state in ["CAST", "CANCELLED"]:
+                    lines = self.player2.ui_message.split('\n')
+                    color = (0,255,0) if self.player2.spell_state == "CAST" else (0,0,255)
+                    for idx, line in enumerate(lines):
+                        cv2.putText(frame, line, (p2_x + 40,130 + idx*35), cv2.FONT_HERSHEY_COMPLEX, 0.6, color, 2)
 
         return frame
 
@@ -129,6 +168,12 @@ class Game:
             current_time = time.time()
             delta_time = current_time - self.prev_time
             self.prev_time = current_time
+
+            # Mana Regeneration
+            if not self.game_over:
+                MANA_REGEN_RATE = 5.0 # 5 MP per second
+                self.player1.restore_mana(MANA_REGEN_RATE * delta_time)
+                self.player2.restore_mana(MANA_REGEN_RATE * delta_time)
 
             frame = self.camera.get_frame()
 
@@ -187,21 +232,12 @@ class Game:
                             else:
                                 p2_gesture = gesture_name
 
-            # Update Player 1 Spell State
-            if p1_gesture != self.player1.gesture:
-                self.player1.update_gesture(p1_gesture)
-                if p1_gesture != "None" and p1_gesture != "":
-                    self.player1.update_spell(self.spell_manager.get_spell(p1_gesture))
-                else:
-                    self.player1.update_spell(None)
+            if not self.game_over:
+                # Update Player 1 Spell State
+                self.player1.update_spell_state(delta_time, p1_gesture, self.player2, self.spell_manager)
 
-            # Update Player 2 Spell State
-            if p2_gesture != self.player2.gesture:
-                self.player2.update_gesture(p2_gesture)
-                if p2_gesture != "None" and p2_gesture != "":
-                    self.player2.update_spell(self.spell_manager.get_spell(p2_gesture))
-                else:
-                    self.player2.update_spell(None)
+                # Update Player 2 Spell State
+                self.player2.update_spell_state(delta_time, p2_gesture, self.player1, self.spell_manager)
 
 
             # ---------------- DRAW ---------------- #
@@ -215,6 +251,32 @@ class Game:
                 frame,
                 hand_result
             )
+
+            # ---------------- GAME OVER CHECK ---------------- #
+            
+            if not self.game_over:
+                if self.player1.is_defeated:
+                    self.game_over = True
+                    self.winner = "PLAYER 2"
+                    self.game_over_time = time.time()
+                elif self.player2.is_defeated:
+                    self.game_over = True
+                    self.winner = "PLAYER 1"
+                    self.game_over_time = time.time()
+                    
+            if self.game_over:
+                text = f"{self.winner} WINS!"
+                text_size = cv2.getTextSize(text, cv2.FONT_HERSHEY_COMPLEX, 2, 5)[0]
+                text_x = (width - text_size[0]) // 2
+                text_y = height // 2
+                
+                # Draw black background rectangle for text
+                cv2.rectangle(frame, (text_x - 20, text_y - text_size[1] - 20), 
+                              (text_x + text_size[0] + 20, text_y + 20), (0, 0, 0), -1)
+                cv2.putText(frame, text, (text_x, text_y), cv2.FONT_HERSHEY_COMPLEX, 2, (0, 215, 255), 5)
+                
+                if time.time() - self.game_over_time > 4.0:
+                    break
 
             # ---------------- UI ---------------- #
 
