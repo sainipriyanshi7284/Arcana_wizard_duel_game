@@ -80,42 +80,62 @@ class HandTracker:
 
         return players        
     
-    def draw_landmarks(self,frame,result):
+    def get_hand_center(self, hand, frame_shape):
+        """
+        Computes the pixel coordinates (x, y) of the palm center from hand landmarks.
+        """
+        if not hand:
+            return None
+        h, w = frame_shape[:2]
+        # Average key palm landmarks: wrist(0), index_mcp(5), middle_mcp(9), ring_mcp(13), pinky_mcp(17)
+        palm_indices = [0, 5, 9, 13, 17]
+        avg_x = sum(hand[i].x for i in palm_indices) / len(palm_indices)
+        avg_y = sum(hand[i].y for i in palm_indices) / len(palm_indices)
+        return int(avg_x * w), int(avg_y * h)
+
+    def draw_landmarks(self, frame, result, player_themes=None):
         if not result.hand_landmarks:
             return frame
-        
+
         h, w, _ = frame.shape
         for hand in result.hand_landmarks:
-            player,color = self.get_player(hand)
-            wrist = hand[0]
-            wrist_x = int(wrist.x * w)
-            wrist_y = int(wrist.y * h)
-            
-            cv2.putText(frame,f"{player}",(wrist_x - 45, wrist_y - 30),
-                        cv2.FONT_HERSHEY_COMPLEX_SMALL,0.7,color,2)
-            
+            player, _ = self.get_player(hand)
+            theme = player_themes.get(player, "neutral") if player_themes else "neutral"
+
+            # When an elemental spell is active, do NOT draw artificial dots over the fire/ice
+            if theme in ["fire", "ice"]:
+                continue
+
             for landmark in hand:
                 x = int(landmark.x * w)
                 y = int(landmark.y * h)
-                cv2.circle(frame,(x, y),self.LANDMARK_RADIUS,color,-1)
+                cv2.circle(frame, (x, y), 5, (190, 190, 210), 1, cv2.LINE_AA)
+                cv2.circle(frame, (x, y), 3, (255, 255, 255), -1, cv2.LINE_AA)
         return frame
 
-    def draw_connections(self,frame, result,):
+    def draw_connections(self, frame, result, player_themes=None):
         if not result.hand_landmarks:
             return frame
         h, w, _ = frame.shape
-    
-        for hand in result.hand_landmarks:
-            player,color = self.get_player(hand)
-            
-            for start, end in self.CONNECTIONS:
-                    x1 = int(hand[start].x * w)
-                    y1 = int(hand[start].y * h)
-                    x2 = int(hand[end].x * w)
-                    y2 = int(hand[end].y * h)
 
-                    cv2.line(frame,(x1, y1),(x2, y2),color,self.LINE_THICKNESS)
-                        
+        for hand in result.hand_landmarks:
+            player, _ = self.get_player(hand)
+            theme = player_themes.get(player, "neutral") if player_themes else "neutral"
+
+            # When an elemental spell is active, do NOT draw artificial lines over the fire/ice
+            if theme in ["fire", "ice"]:
+                continue
+
+            for start, end in self.CONNECTIONS:
+                x1 = int(hand[start].x * w)
+                y1 = int(hand[start].y * h)
+                x2 = int(hand[end].x * w)
+                y2 = int(hand[end].y * h)
+
+                cv2.line(frame, (x1, y1), (x2, y2), (255, 255, 255), 1, cv2.LINE_AA)
 
         return frame
+
+
+
             
