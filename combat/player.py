@@ -10,6 +10,7 @@ class Player:
         self.locked_gesture = "None"
         self.ui_message = ""
         self.message_timer = 0.0
+        self.last_cast_damage = 0
 
         self.health = 100
         self.mana = 100
@@ -53,17 +54,30 @@ class Player:
                 else:
                     self._attempt_cast(target_player)
 
-        elif self.spell_state in ["CAST", "CANCELLED"]:
+        elif self.spell_state in ["CAST", "CANCELLED", "NEEDS_RESET"]:
             self.message_timer -= dt
-            if self.message_timer <= 0:
+            
+            # Immediately allow casting a new spell if they change to a new valid gesture
+            if current_gesture != "None" and current_gesture != "" and current_gesture != self.locked_gesture:
+                spell = spell_manager.get_spell(current_gesture)
+                if spell:
+                    self.locked_spell = spell
+                    self.locked_gesture = current_gesture
+                    self.spell_state = "CHARGING"
+                    self.charge_time = 0.0
+                    self.ui_message = ""
+                    return
+            
+            # Standard timeout fallback
+            if self.message_timer <= 0 and self.spell_state in ["CAST", "CANCELLED"]:
                 self.spell_state = "NEEDS_RESET"
-
-        elif self.spell_state == "NEEDS_RESET":
-            # Wait for them to release the previous gesture to prevent repeated casting
-            if current_gesture != self.locked_gesture:
-                self.spell_state = "IDLE"
-                self.locked_spell = None
-                self.locked_gesture = "None"
+                
+            if self.spell_state == "NEEDS_RESET":
+                # Wait for them to release the previous gesture to prevent repeated casting
+                if current_gesture != self.locked_gesture:
+                    self.spell_state = "IDLE"
+                    self.locked_spell = None
+                    self.locked_gesture = "None"
 
     def _attempt_cast(self, target_player):
         # Calculate scaled damage
@@ -73,7 +87,9 @@ class Player:
         # Check Mana
         if self.mana >= self.locked_spell.mana_cost:
             self.use_mana(self.locked_spell.mana_cost)
-            target_player.take_damage(final_damage)
+            self.last_cast_damage = final_damage
+            
+            self.last_cast_damage = final_damage
             self.spell_state = "CAST"
             self.ui_message = f"{self.locked_spell.name} CAST!\nDamage: {final_damage}\nMana: -{self.locked_spell.mana_cost}"
             self.message_timer = 2.0

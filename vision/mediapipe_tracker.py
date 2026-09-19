@@ -80,42 +80,5 @@ class HandTracker:
 
         return players        
     
-    def draw_landmarks(self,frame,result):
-        if not result.hand_landmarks:
-            return frame
-        
-        h, w, _ = frame.shape
-        for hand in result.hand_landmarks:
-            player,color = self.get_player(hand)
-            wrist = hand[0]
-            wrist_x = int(wrist.x * w)
-            wrist_y = int(wrist.y * h)
-            
-            cv2.putText(frame,f"{player}",(wrist_x - 45, wrist_y - 30),
-                        cv2.FONT_HERSHEY_COMPLEX_SMALL,0.7,color,2)
-            
-            for landmark in hand:
-                x = int(landmark.x * w)
-                y = int(landmark.y * h)
-                cv2.circle(frame,(x, y),self.LANDMARK_RADIUS,color,-1)
-        return frame
-
-    def draw_connections(self,frame, result,):
-        if not result.hand_landmarks:
-            return frame
-        h, w, _ = frame.shape
-    
-        for hand in result.hand_landmarks:
-            player,color = self.get_player(hand)
-            
-            for start, end in self.CONNECTIONS:
-                    x1 = int(hand[start].x * w)
-                    y1 = int(hand[start].y * h)
-                    x2 = int(hand[end].x * w)
-                    y2 = int(hand[end].y * h)
-
-                    cv2.line(frame,(x1, y1),(x2, y2),color,self.LINE_THICKNESS)
-                        
-
-        return frame
+   
             

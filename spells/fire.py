@@ -9,5 +9,5 @@ class FireSpell(BaseSpell):
             name="Fireball",
             damage=30,
             mana_cost=20,
-            cooldown=2
+            cooldown=5
         )
